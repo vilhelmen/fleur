@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-from operator import itemgetter
+from pathlib import Path
+import itertools
 
 # Ripped from my terminal
 '''
@@ -34,12 +35,17 @@ rose = '\u001b[38;5;168m'
 .-------.
 |       |
 |       |
+|       |
+.-------.
+.-------.
+|       |
+|       |
 |   .   |
 .-------.
 .-------.
 |       |
 |       |
-|  ~.~  |
+|  ~,~  |
 .-------.
 .-------.
 |       |
@@ -53,30 +59,18 @@ rose = '\u001b[38;5;168m'
 .-------.
 '''  # noqa: W605
 
-flower_stage_one = [
-    '       ',
-    '       ',
-    '   {}.{}   '.format(green, reset)
-]
+# Ok, dumping assets to disk.
+# First is flower type, then stage, then just a unique identifier for alternates
+# Missing type is generic
+# So, everything looks the same right now
+# Split loaded art by newline
 
-flower_stage_two = [
-    '       ',
-    '       ',
-    '  {}~.~{}  '.format(green, reset)
-]
+# I give this a 0% chance to load the art dir right
+ART_PATH = 'art/'
 
-flower_stage_three = [
-    '       ',
-    '  {{FLOWER}}&{}    '.format(reset),
-    '  {}\\)/{}  '.format(green, reset)
-]
-flower_stage_four = [
-    '  {{FLOWER}}VWV{}  '.format(reset),
-    '   {}|{}   '.format(green, reset),
-    '  {}\\|/{}  '.format(green, reset)
-]
+# assets are dict of lists of lists, TYPE, STAGE (as int), then a list of possible frames to select from
 
-frame = [
+flower_frame = [
     '{{BORDER}}.-------.{}\n'.format(reset),
     '{{BORDER}}|{}'.format(reset), '{{BORDER}}|{}\n'.format(reset),
     '{{BORDER}}|{}'.format(reset), '{{BORDER}}|{}\n'.format(reset),
@@ -84,20 +78,45 @@ frame = [
     '{{BORDER}}.-------.{}\n'.format(reset)
 ]
 
-framed_flowers = []
-for flower in [flower_stage_one, flower_stage_two, flower_stage_three, flower_stage_four]:
-    # Shut up, I've thrown out a day of work. THIS IS FINE
-    framed_flowers.append(
-        ''.join([
-            frame[0],
-            frame[1], flower[0], frame[2],
-            frame[3], flower[1], frame[4],
-            frame[5], flower[2], frame[6],
-            frame[7]
-        ])
-    )
+class FlowerRegistry:
+    def __init__(self):
+        self.flower_types = {'TULIP'}
+        self.seed_types = {
+            'TULIP': [
+                [2, 0, 1], [0, 2, 0], [0, 0, 1]
+            ]
+        }
+        self.flower_colors = {}  # lol UHHHHH I'm gonna have to just make a table or something
+        self.flower_assets = {}
 
-#print(framed_flowers[0].format(BORDER=brown, FLOWER=rose))
-#print(framed_flowers[1].format(BORDER=brown, FLOWER=rose))
-#print(framed_flowers[2].format(BORDER=brown, FLOWER=rose))
-#print(framed_flowers[3].format(BORDER=brown, FLOWER=rose))
+        self.flower_assets = compile_assets([0, 1, 2, 3, 4], self.flower_types)
+
+
+def frame_asset(asset):
+    return [
+        flower_frame[0],
+        ''.join([flower_frame[1], asset[0], flower_frame[2]]),
+        ''.join([flower_frame[3], asset[1], flower_frame[4]]),
+        ''.join([flower_frame[5], asset[2], flower_frame[6]]),
+        flower_frame[7]
+    ]
+
+
+def compile_assets(flower_stages, flower_types):
+    compiled_assets = {type: [] for type in flower_types}
+    root_path = Path(art_path)
+
+    for stage in flower_stages:
+        # TODO: apply base colors
+        generic_stage_assets = [frame_asset(file.read_text().split('\n')) for file in root_path.glob(''.join(['_', str(stage), '*']))]
+
+        for type in flower_types:
+            # TODO: apply base colors
+            type_stage_assets = [frame_asset(file.read_text().split('\n')) for file in root_path.glob(''.join([type, '_', str(stage), '*']))]
+
+            compiled_assets[type].append(generic_stage_assets + type_stage_assets)
+
+            if not compiled_assets[type][stage]:
+                raise Exception('Missing asset for {} stage {}'.format(type, str(stage)))
+
+    return all_assets
