@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from pathlib import Path
-import itertools
+from . import art
+import secrets
 
 # Ripped from my terminal
 '''
@@ -20,10 +20,21 @@ WHITE="$(tput setaf 254)"
 '''
 
 # printf "$(tput sgr0)" | uniscribe
-reset = '\u001b[30m'
-bold = '\u001b(B\u001b[m'
 
-cyan = '\u001b[38;5;37m'
+CURSOR_UP = '\u001b[1A'
+CURSOR_DOWN = '\u001b[1B'
+CURSOR_RIGHT = '\u001b[1C'
+CURSOR_LEFT = '\u001b[1D'
+
+CURSOR_UP_N = '\u001b[{}A'
+CURSOR_DOWN_N = '\u001b[{}B'
+CURSOR_RIGHT_N = '\u001b[{}C'
+CURSOR_LEFT_N = '\u001b[{}D'
+
+reset = '\u001b[30m'
+bold = '\u001b[1m'
+
+
 green = '\u001b[38;5;64m'
 
 yellow = '\u001b[38;5;226m'
@@ -31,92 +42,97 @@ yellow = '\u001b[38;5;226m'
 brown = '\u001b[38;5;130m'
 rose = '\u001b[38;5;168m'
 
-'''
-.-------.
-|       |
-|       |
-|       |
-.-------.
-.-------.
-|       |
-|       |
-|   .   |
-.-------.
-.-------.
-|       |
-|       |
-|  ~,~  |
-.-------.
-.-------.
-|       |
-|  &    |
-|  \)/  |
-.-------.
-.-------.
-|  VWV  |
-|   |   |
-|  \|/  |
-.-------.
-'''  # noqa: W605
-
-# Ok, dumping assets to disk.
-# First is flower type, then stage, then just a unique identifier for alternates
-# Missing type is generic
-# So, everything looks the same right now
-# Split loaded art by newline
-
-# I give this a 0% chance to load the art dir right
-ART_PATH = 'art/'
-
-# assets are dict of lists of lists, TYPE, STAGE (as int), then a list of possible frames to select from
-
-flower_frame = [
-    '{{BORDER}}.-------.{}\n'.format(reset),
-    '{{BORDER}}|{}'.format(reset), '{{BORDER}}|{}\n'.format(reset),
-    '{{BORDER}}|{}'.format(reset), '{{BORDER}}|{}\n'.format(reset),
-    '{{BORDER}}|{}'.format(reset), '{{BORDER}}|{}\n'.format(reset),
-    '{{BORDER}}.-------.{}\n'.format(reset)
-]
 
 class FlowerRegistry:
     def __init__(self):
-        self.flower_types = {'TULIP'}
+        self.flower_types = {'Tulip'}
         self.seed_types = {
-            'TULIP': [
-                [2, 0, 1], [0, 2, 0], [0, 0, 1]
+            'Tulip': [
+                'RRyyWw', 'rrYYww', 'rryyWw'
             ]
         }
-        self.flower_colors = {}  # lol UHHHHH I'm gonna have to just make a table or something
-        self.flower_assets = {}
 
-        self.flower_assets = compile_assets([0, 1, 2, 3, 4], self.flower_types)
+        self.flower_colors = {
+            'Tulip': {
+                'rryyww': 'White',
+                'rryyWw': 'White',
+                'rryyWW': 'White',
+                'rrYyww': 'Yellow',
+                'rrYyWw': 'Yellow',
+                'rrYyWW': 'White',
+                'rrYYww': 'Yellow',
+                'rrYYWw': 'Yellow',
+                'rrYYWW': 'Yellow',
+                'Rryyww': 'Red',
+                'RryyWw': 'Pink',
+                'RryyWW': 'White',
+                'RrYyww': 'Orange',
+                'RrYyWw': 'Yellow',
+                'RrYyWW': 'Yellow',
+                'RrYYww': 'Orange',
+                'RrYYWw': 'Yellow',
+                'RrYYWW': 'Yellow',
+                'RRyyww': 'Black',
+                'RRyyWw': 'Red',
+                'RRyyWW': 'Red',
+                'RRYyww': 'Black',
+                'RRYyWw': 'Red',
+                'RRYyWW': 'Red',
+                'RRYYww': 'Purple',
+                'RRYYWw': 'Purple',
+                'RRYYWW': 'Purple'
+            }
+        }
 
+        self.render_codes = {
+            'Red': '\u001b[38;5;1m',
+            'Yellow': '\u001b[38;5;226m',
+            'White': '\u001b[38;5;15m',
+            'Pink': '\u001b[38;5;168m',
+            'Orange': '\u001b[38;5;208m',
+            'Purple': '\u001b[38;5;127m',
+            'Black': '\u001b[38;5;240m',
+            'Blue': '\u001b[38;5;63m',
+            'Green': '\u001b[38;5;35m',
+            'Plant': '\u001b[38;5;35m',
+            'Water': '\u001b[38;5;38m',
+            'StandardBorder': '\u001b[38;5;130m',
+            'RESET': '\u001b[30m',
+            'BOLD': '\u001b[5m',
+            'BLINK': '\u001b[1m',
+        }
+        # Why not...some require it lol
+        self.render_codes.update({k.upper(): v for k, v in self.render_codes.items()})
 
-def frame_asset(asset):
-    return [
-        flower_frame[0],
-        ''.join([flower_frame[1], asset[0], flower_frame[2]]),
-        ''.join([flower_frame[3], asset[1], flower_frame[4]]),
-        ''.join([flower_frame[5], asset[2], flower_frame[6]]),
-        flower_frame[7]
-    ]
+        self.flower_assets = art.compile_assets([0, 1, 2, 3, 4], self.flower_types)
 
+    class Flower:
+        def __init__(self):
+            self.stage = 0
+            self.type = None
+            self.genes = None
+            self.known = None  # Genes are known
+            self.water_level = 0
+            self.watered_now = False  # I was going to have the border turn blue but...?
 
-def compile_assets(flower_stages, flower_types):
-    compiled_assets = {type: [] for type in flower_types}
-    root_path = Path(art_path)
+    def render_flower(self, flower, highlighted, moving):
+        border = []
+        if highlighted:
+            border.append(self.render_codes['BOLD'])
+        if moving:
+            border.append(self.render_codes['BLINK'])
 
-    for stage in flower_stages:
-        # TODO: apply base colors
-        generic_stage_assets = [frame_asset(file.read_text().split('\n')) for file in root_path.glob(''.join(['_', str(stage), '*']))]
+        if flower.watered_now:
+            border.append(self.render_codes['Water'])
+        else:
+            border.append(self.render_codes['StandardBorder'])
 
-        for type in flower_types:
-            # TODO: apply base colors
-            type_stage_assets = [frame_asset(file.read_text().split('\n')) for file in root_path.glob(''.join([type, '_', str(stage), '*']))]
+        border = ''.join(border)
 
-            compiled_assets[type].append(generic_stage_assets + type_stage_assets)
-
-            if not compiled_assets[type][stage]:
-                raise Exception('Missing asset for {} stage {}'.format(type, str(stage)))
-
-    return all_assets
+        return (CURSOR_DOWN + CURSOR_LEFT_N.format(art.FRAME_WIDTH)).join(
+            secrets.choice(self.flower_assets[flower.type][flower.stage])
+        ).format(
+            BORDER=border,
+            FLOWER=self.render_codes[self.flower_colors[flower.type][flower.genes]],
+            **self.render_codes
+        )

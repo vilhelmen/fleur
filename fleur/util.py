@@ -13,7 +13,6 @@ import termios, sys, tty
 # ESC [ u
 # http://man7.org/linux/man-pages/man4/console_codes.4.html
 
-
 # Just ripped from the docs
 def setup_logging():
     rootLogger = logging.getLogger('')

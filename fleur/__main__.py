@@ -9,12 +9,7 @@ util.setup_logging()
 
 class FlowerCell:
     def __init__(self):
-        self.stage = 0
-        self.type = None
-        self.genes = None
-        self.known = None # Genes are known
-        self.water = 0
-        self.watered_now = False # I was going to have the border turn blue but...?
+
 
         self.highlighted = False # cursor over it
         self.selected_move = False # A move target. Idk, blink?
