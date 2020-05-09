@@ -1,0 +1,3 @@
+{FLOWER}VWV{RESET}    
+  {Plant}\{RESET}    
+  {Plant}(\/{RESET}  

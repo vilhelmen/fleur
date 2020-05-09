@@ -42,12 +42,13 @@ log = logging.getLogger('ART')
 # Deal with it, update it yourself. I'm not scanning for non-printables every time I render, this is inefficient enough
 # If you go wider than the frame was designed for, that's on you
 FRAME_WIDTH = 9
+FRAME_HEIGHT = 5
 flower_frame = [
-    '{BORDER}.-------.{RESET}',
+    '{BORDER}+-------+{RESET}',
     '{BORDER}|{RESET}', '{BORDER}|{RESET}',
     '{BORDER}|{RESET}', '{BORDER}|{RESET}',
     '{BORDER}|{RESET}', '{BORDER}|{RESET}',
-    '{BORDER}.-------.{RESET}'
+    '{BORDER}+-------+{RESET}'
 ]
 
 
@@ -62,18 +63,21 @@ def frame_asset(asset):
     ]
 
 
-def compile_assets(flower_stages, flower_types):
-    compiled_assets = {type: [] for type in flower_types}
+def compile_assets(flower_types):
+    compiled_assets = {type: {} for type in flower_types}
     root_path = Path(__file__).parent
 
-    for stage in flower_stages:
+    # Empty frame assets
+    compiled_assets[0] = [frame_asset(file.read_text().split('\n')) for file in root_path.glob(''.join(['0_*']))]
+
+    for stage in [1, 2, 3, 4]:
         # TODO: apply base colors?
-        generic_stage_assets = [frame_asset(file.read_text().split('\n')) for file in root_path.glob(''.join(['_', str(stage), '*']))]
+        generic_stage_assets = [frame_asset(file.read_text().split('\n')) for file in root_path.glob(''.join(['_', str(stage), '*.txt']))]
 
         for type in flower_types:
             # TODO: apply base colors?
-            type_stage_assets = [frame_asset(file.read_text().split('\n')) for file in root_path.glob(''.join([type, '_', str(stage), '*']))]
-            compiled_assets[type].append(generic_stage_assets + type_stage_assets)
+            type_stage_assets = [frame_asset(file.read_text().split('\n')) for file in root_path.glob(''.join([type, '_', str(stage), '*.txt']))]
+            compiled_assets[type][stage] = (generic_stage_assets + type_stage_assets)
 
             if not compiled_assets[type][stage]:
                 raise Exception('Missing asset for {} stage {}'.format(type, str(stage)))

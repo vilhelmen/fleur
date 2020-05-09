@@ -2,29 +2,15 @@
 
 import logging
 
-from . import util
+from . import util, logic
 
 util.setup_logging()
 
+util.setup_console_control()
 
-class FlowerCell:
-    def __init__(self):
+util.clear_screen_and_reset_position()
 
+GL = logic.GameLogic()
 
-        self.highlighted = False # cursor over it
-        self.selected_move = False # A move target. Idk, blink?
-        self._render = None
-        self.update()
+GL.render()
 
-    def update(self):
-        """Render and cache"""
-
-
-    @@property
-    def render(self):
-        return self._render
-
-
-
-class Game:
-    def __init__(self, col, row):
