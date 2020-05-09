@@ -87,6 +87,9 @@ class GameLogic(rendering.Renderable):
         self.grid = FlowerGrid(render_x=2, render_y=2, rows=rows, cols=cols)
         self.grid.flowers_pls()
         self.sidebar = Sidebar(render_x=self.grid.size[0]+3, render_y=2, height=self.grid.size[1])
+
+        util.setup_console_control()
+        util.clear_screen_and_reset_position()
         util.set_console_size(self.grid.size[0]+self.sidebar.width+3, self.grid.size[1]+self.sidebar.height+2)
 
     def render(self):
@@ -99,3 +102,12 @@ class GameLogic(rendering.Renderable):
         ]))
         self.grid.render()
         self.sidebar.render()
+        sys.stdout.flush()  # This may need to move
+
+    def launch(self):
+        state = {}
+        local_state = {}
+        # Boot screen? Also why is the game like 20 rows taller than it should be.
+        self.render()
+        while True:
+            util.read_input()

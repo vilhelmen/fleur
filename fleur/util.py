@@ -32,24 +32,32 @@ def setup_logging():
 def restore_console_settings(fd, restore_conf):
     # be kind, rewind
     termios.tcsetattr(fd, termios.TCSAFLUSH, restore_conf)
-    sys.stdout.write('\u001b[0m\u001b[1S\n')
+    # Uhh, reset, vertical scroll a line, newline (maybe no newline? Want to fix PS1 location on exit, may need a )
+    sys.stdout.write(''.join([
+        '\u001b[0m',
+        '\u001b[?12;25h'  # technically terminfo describes this as "VERY VISIBLE"
+        '\u001b[1S',
+        '\n'
+    ]))
 
 
 # Mangled from docs
-def setup_console_control(disable_echo=True):
+def setup_console_control():
     fd = sys.stdin.fileno()
     # Restore data
     restore = termios.tcgetattr(fd)
     # Raw mode
     tty.setraw(sys.stdin)
 
-    if disable_echo:
-        # Disable keypress echoing
-        new_config = termios.tcgetattr(fd)
-        new_config[3] = new_config[3] & ~termios.ECHO
-        # Drain changes mode when output is flushed, TCSAFLUSH to discard pending input (tempting)
-        termios.tcsetattr(fd, termios.TCSADRAIN, new_config)
-        atexit.register(restore_console_settings, fd, restore)
+    # Disable keypress echoing
+    new_config = termios.tcgetattr(fd)
+    new_config[3] = new_config[3] & ~termios.ECHO
+    # Drain changes mode when output is flushed, TCSAFLUSH to discard pending input (tempting)
+    termios.tcsetattr(fd, termios.TCSADRAIN, new_config)
+    atexit.register(restore_console_settings, fd, restore)
+
+    # Also hide the cursor. OOPS!
+    sys.stdout.write('\u001b[?25l')
     #
     # while True:
     #     char = sys.stdin.read(1)
@@ -59,11 +67,23 @@ def setup_console_control(disable_echo=True):
     #     sys.stdout.write(u"\u001b[1000D") # Move all the way left
 
 
+def read_input():
+    input = sys.stdin.read(1)
+    # Up, down, right, left are 27,91,{65,66,67,68}
+    # Let's hope cursor input just doesn't happen
+    # ^C is 3
+    if ord(input) == 3:
+        raise KeyboardInterrupt()
+    logging.debug('aaa %s', ord(input))
+    return input
+
+
 def set_console_size(cols, rows):
     # define a signal handler, attach to whatever signal that is, also do an initial poll
     # It's SIGWINCH, but you gotta query again.
     # ...Or I could just ask in a loop until it's the right size.
     # I AM NO LONGER ASKING https://apple.stackexchange.com/a/47841/205576
+    logging.debug('Reset to (x,y): (%s,%s)', cols, rows)
     sys.stdout.write(''.join(['\u001b[8;', str(rows), ';', str(cols), 't']))
 
 
