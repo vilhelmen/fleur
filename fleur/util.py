@@ -3,8 +3,11 @@
 import logging
 import logging.handlers
 import atexit
+import curses
 
 import termios, sys, tty
+
+logger = logging.getLogger('util')
 
 # console stuff
 # https://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html#cursor-navigation
@@ -26,57 +29,32 @@ def setup_logging():
     rootLogger.addHandler(socketHandler)
 
     # Now, we can log to the root logger, or any other logger. First the root...
-    logging.debug('Logging Boot')
+    logging.debug('Logging online')
 
 
-def restore_console_settings(fd, restore_conf):
-    # be kind, rewind
-    termios.tcsetattr(fd, termios.TCSAFLUSH, restore_conf)
-    # Uhh, reset, vertical scroll a line, newline (maybe no newline? Want to fix PS1 location on exit, may need a )
-    sys.stdout.write(''.join([
-        '\u001b[0m',
-        '\u001b[?12;25h'  # technically terminfo describes this as "VERY VISIBLE"
-        '\u001b[1S',
-        '\n'
-    ]))
+def breakdown_console(stdscr):
+    stdscr.keypad(False)
+    curses.nocbreak()
+    curses.curs_set(1)
+    curses.echo()
+    curses.endwin()
 
 
-# Mangled from docs
-def setup_console_control():
-    fd = sys.stdin.fileno()
-    # Restore data
-    restore = termios.tcgetattr(fd)
-    # Raw mode
-    tty.setraw(sys.stdin)
+def setup_console():
+    # using wrapper would be cool, but I can't unset visibility
+    stdscr = curses.initscr()
+    curses.start_color()
 
-    # Disable keypress echoing
-    new_config = termios.tcgetattr(fd)
-    new_config[3] = new_config[3] & ~termios.ECHO
-    # Drain changes mode when output is flushed, TCSAFLUSH to discard pending input (tempting)
-    termios.tcsetattr(fd, termios.TCSADRAIN, new_config)
-    atexit.register(restore_console_settings, fd, restore)
+    curses.noecho()
+    curses.curs_set(0)
 
-    # Also hide the cursor. OOPS!
-    sys.stdout.write('\u001b[?25l')
-    #
-    # while True:
-    #     char = sys.stdin.read(1)
-    #     if ord(char) == 3: # CTRL-C
-    #         break;
-    #     print ord(char)
-    #     sys.stdout.write(u"\u001b[1000D") # Move all the way left
+    curses.cbreak()  # TBH idk if this is helpful. I WON'T receive ^C
+    stdscr.keypad(True)
 
+    # Moved to game logic because UGH, maybe I'll just use the wrapper
+    # atexit.register(breakdown_console, stdscr)
 
-def read_input():
-    input = sys.stdin.read(1)
-    # Up, down, right, left are 27,91,{65,66,67,68}
-    # Let's hope cursor input just doesn't happen
-    # ^C is 3
-    if ord(input) == 3:
-        raise KeyboardInterrupt()
-    logging.debug('aaa %s', ord(input))
-    return input
-
+    return stdscr
 
 def set_console_size(cols, rows):
     # define a signal handler, attach to whatever signal that is, also do an initial poll
@@ -85,36 +63,3 @@ def set_console_size(cols, rows):
     # I AM NO LONGER ASKING https://apple.stackexchange.com/a/47841/205576
     logging.debug('Reset to (x,y): (%s,%s)', cols, rows)
     sys.stdout.write(''.join(['\u001b[8;', str(rows), ';', str(cols), 't']))
-
-
-def clear_screen_and_reset_position():
-    # may or may not reset position on clear, explicitly do it.
-    sys.stdout.write('\u001b[2J\u001b[1;1H')
-
-
-# Nuke stdin
-# termios.tcflush(sys.stdin.fileno(), termios.TCIFLUSH)
-
-# This refuses to work despite test code that seems to work fine
-# It shouldn't be needed anyway
-# def get_cursor_position():
-#     """
-#     :return: row, column (1 based)
-#     """
-#     # I'm putting a lot into this function I don't expect to use
-#     sys.stdout.write('\u001b[6n')
-#     # ESC[n;mR
-#     # At least 5 characters, then a terminal R
-#     response = [sys.stdin.read(6)]
-#     while ord(response[-1][-1]) != ord('R'):
-#         response.append(sys.stdin.read(1))
-#
-#     # I mean, the correct option is regex. We don't even know if we've captured the response.
-#     # Strip leading and trailing
-#     response = ''.join(response)
-#
-#     response = response[response.find('\u001b[') + 2:-1].split(';')
-#     n = int(response[0])
-#     m = int(response[1])
-#
-#     return n, m

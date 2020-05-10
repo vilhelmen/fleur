@@ -43,6 +43,18 @@ log = logging.getLogger('ART')
 # If you go wider than the frame was designed for, that's on you
 FRAME_WIDTH = 9
 FRAME_HEIGHT = 5
+
+FLOWER_FRAME = {
+    'ls': '|',
+    'rs': '|',
+    'ts': '-',
+    'bs': '-',
+    'tl': '+',
+    'tr': '+',
+    'bl': '+',
+    'br': '+'
+}
+
 flower_frame = [
     '{BORDER}+-------+{RESET}',
     '{BORDER}|{RESET}', '{BORDER}|{RESET}',

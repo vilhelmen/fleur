@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-import sys, logging
+import sys, logging, curses
 
 from . import rendering, rendering, flowers, util, art
 
 
 class FlowerCell(rendering.Renderable):
-    def __init__(self, render_x=1, render_y=1):
-        super().__init__(render_x=render_x, render_y=render_y)
+    def __init__(self, x=1, y=1):
+        super().__init__(x=x, y=y)
         self.highlighted = False  # cursor over it
         self.moving = False  # Selected to move
         self.flower = None
@@ -30,15 +30,15 @@ class FlowerCell(rendering.Renderable):
 
 
 class FlowerGrid(rendering.Renderable):
-    def __init__(self, render_x=1, render_y=1, rows=5, cols=4):
-        super().__init__(render_x=render_x, render_y=render_y)
+    def __init__(self, x=1, y=1, rows=5, cols=4):
+        super().__init__(x=x, y=y)
         self.rows = rows
         self.cols = cols
         # X, Y
         self.size = (self.cols * art.FRAME_WIDTH, self.rows * art.FRAME_HEIGHT)
 
-        self.cells = [[FlowerCell(render_x=render_x+art.FRAME_WIDTH*x,
-                                  render_y=render_y+art.FRAME_HEIGHT*y) for y in range(self.rows)] for x in range(self.cols)]
+        self.cells = [[FlowerCell(x=x + art.FRAME_WIDTH * x,
+                                  y=y + art.FRAME_HEIGHT * y) for y in range(self.rows)] for x in range(self.cols)]
 
     def render(self):
         # Move background render to here
@@ -63,8 +63,8 @@ class FlowerGrid(rendering.Renderable):
 
 
 class Sidebar(rendering.Renderable):
-    def __init__(self, render_x=1, render_y=1, height=40):  # fix default height
-        super().__init__(render_x=render_x, render_y=render_y)
+    def __init__(self, x=1, y=1, height=40):  # fix default height
+        super().__init__(x=x, y=y)
         # also maybe make a minimum height
         self.height = height
         self.width = 20  # TODO: figure out
@@ -82,27 +82,61 @@ class Sidebar(rendering.Renderable):
 
 
 class GameLogic(rendering.Renderable):
-    def __init__(self, rows=5, cols=4):
-        super().__init__()
-        self.grid = FlowerGrid(render_x=2, render_y=2, rows=rows, cols=cols)
-        self.grid.flowers_pls()
-        self.sidebar = Sidebar(render_x=self.grid.size[0]+3, render_y=2, height=self.grid.size[1])
+    def __init__(self, root_window, rows=5, cols=4):
+        super().__init__(window=root_window)
+        #self.grid = FlowerGrid(x=2, y=2, rows=rows, cols=cols)
+        #self.grid.flowers_pls()
+        #self.sidebar = Sidebar(x=self.grid.size[0] + 3, y=2, height=self.grid.size[1])
 
-        util.setup_console_control()
-        util.clear_screen_and_reset_position()
-        util.set_console_size(self.grid.size[0]+self.sidebar.width+3, self.grid.size[1]+self.sidebar.height+2)
+        GameLogic._terminal_check()  # Just making sure I can name the colors I want/planned
+        # (r,g,b) 0-1000 is wack
+        self.window.bkgd(' ', curses.color_pair(238))
+        self.window.clear()
+        logging.debug('%s',self.window.getmaxyx())
+        sys.stdout.flush()
+        sys.stdout.write('aaaaaa')
+        sys.stdout.flush()
+        curses.resize_term(40, 80)
+        sys.stdout.flush()
+        sys.stdout.write('aaaaaa')
+        sys.stdout.flush()
+        if not curses.is_term_resized(40, 80):
+            logging.debug('CURSES WILL NOT EMIT RESIZE >:C')
+            # BUENOS DIAZ FUCKBOY
+            util.set_console_size(80,40)
+
+
+
+
+    @staticmethod
+    def _terminal_check():
+        # I'm going to assume you have colors.
+        if curses.COLORS != 256:
+            raise RuntimeError('256-color mode not detected')
+
+    # WHAT DO YOU MEAN NO KEYWORD ARGUMENTS THEY ARE EXPLICITLY NAMED THESE THINGS EVERYWHERE
+    # Freaking C bindings
+    # BORDER = {
+    #     'ls': '║', 'rs': '║', 'ts': '═', 'bs': '═',
+    #     'tl': '╔', 'tr': '╗', 'bl': '╚', 'br': '╝'
+    # }
+    BORDER = ['║', '║', '═', '═', '╔', '╗', '╚', '╝']
 
     def render(self):
-        sys.stdout.write(''.join([
-            self.move_to_render_target_string(),
-            rendering.FULL_RESET,
-            ''.join(['╔', '═'*self.grid.size[0], '╦', '═'*self.sidebar.width, '╗']),
-            ''.join([rendering.CURSOR_DOWN_FAR_LEFT, '║', rendering.CURSOR_RIGHT_N.format(self.grid.size[0]), '║', rendering.CURSOR_RIGHT_N.format(self.sidebar.width), '║'])*self.grid.size[1],
-            ''.join([rendering.CURSOR_DOWN_FAR_LEFT, '╚', '═'*self.grid.size[0], '╩', '═'*self.sidebar.width, '╝'])
-        ]))
-        self.grid.render()
-        self.sidebar.render()
-        sys.stdout.flush()  # This may need to move
+        self.window.refresh()
+        self.window.addch(10, 10, '-')
+        self.window.refresh()
+        #self.window.border(*self.BORDER)
+        # sys.stdout.write(''.join([
+        #     self.move_to_render_target_string(),
+        #     rendering.FULL_RESET,
+        #     ''.join(['╔', '═'*self.grid.size[0], '╦', '═'*self.sidebar.width, '╗']),
+        #     ''.join([rendering.CURSOR_DOWN_FAR_LEFT, '║', rendering.CURSOR_RIGHT_N.format(self.grid.size[0]), '║', rendering.CURSOR_RIGHT_N.format(self.sidebar.width), '║'])*self.grid.size[1],
+        #     ''.join([rendering.CURSOR_DOWN_FAR_LEFT, '╚', '═'*self.grid.size[0], '╩', '═'*self.sidebar.width, '╝'])
+        # ]))
+        # self.grid.render()
+        # self.sidebar.render()
+        # sys.stdout.flush()  # This may need to move
 
     def launch(self):
         state = {}
@@ -110,4 +144,6 @@ class GameLogic(rendering.Renderable):
         # Boot screen? Also why is the game like 20 rows taller than it should be.
         self.render()
         while True:
-            util.read_input()
+            break
+
+        util.breakdown_console(self.window)

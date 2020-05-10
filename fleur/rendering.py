@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-import sys
-import threading
+import curses
 
 # COLUMN IS X AND ROW IS Y AND I'M PUTTING IT HERE BEFORE I LOSE MY MIND ALSO IT'S ONE BASED
 
@@ -35,10 +34,6 @@ CURSOR_LEFT_N = '\u001b[{}D'
 
 CURSOR_DOWN_FAR_LEFT = '\u001b[1E'
 
-def set_cursor_position_string(row, col):
-    return '\u001b[{};{}H'.format(row, col)
-
-
 FULL_RESET = '\u001b[0m'
 BOLD = '\u001b[1m'
 BLINK = '\u001b[5m'
@@ -46,18 +41,14 @@ BLINK_OFF = '\u001b[25m'
 INVERT = '\u001b[7m'
 
 
-RENDER_LOCK = threading.Event()
-
-
 class Renderable:
-    def __init__(self, render_x=1, render_y=1):
-        self.render_target = (render_x, render_y)
-
-    def move_to_render_target_string(self):
-        return '\u001b[{};{}H'.format(self.render_target[1], self.render_target[0])
-
-    def move_to_render_target(self):
-        sys.stdout.write(self.move_to_render_target_string())
+    def __init__(self, y=0, x=0, rows=0, cols=0, window=None):
+        if window is not None:
+            self.window = window
+        elif rows == 0 or cols == 0:
+            raise RuntimeError('Renderable with no size!')
+        else:
+            self.window = curses.newwin(y, x, rows, cols)
 
     def render(self):
-        raise Exception('Render not set!')
+        raise RuntimeError('render() not set!')
