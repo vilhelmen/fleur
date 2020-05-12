@@ -88,31 +88,32 @@ class GameLogic(rendering.Renderable):
         #self.grid.flowers_pls()
         #self.sidebar = Sidebar(x=self.grid.size[0] + 3, y=2, height=self.grid.size[1])
 
-        GameLogic._terminal_check()  # Just making sure I can name the colors I want/planned
         # (r,g,b) 0-1000 is wack
-        self.window.bkgd(' ', curses.color_pair(238))
         self.window.clear()
-        logging.debug('%s',self.window.getmaxyx())
-        sys.stdout.flush()
-        sys.stdout.write('aaaaaa')
-        sys.stdout.flush()
-        curses.resize_term(40, 80)
-        sys.stdout.flush()
-        sys.stdout.write('aaaaaa')
-        sys.stdout.flush()
-        if not curses.is_term_resized(40, 80):
-            logging.debug('CURSES WILL NOT EMIT RESIZE >:C')
-            # BUENOS DIAZ FUCKBOY
-            util.set_console_size(80,40)
 
+        # Uhh, bootscreen here if I feel creative
 
+        # Something about this breaks text display, which is to say it went black on black and took AGES to figure out
+        # Mother of god I think it's initializing the 8-bit colorspace to all (0,0,0)
+        # WHY ARE YOU LIKE THIS
+        self.window.bkgd('#', curses.color_pair(1))
+        logging.debug('color %s', curses.color_pair(238))
+        logging.debug('Color is (rgb), %s', curses.color_content(238))  # it SAYS (0,1000,1000) but yeah right.
+        self.window.addstr(0, 0, "Current mode: Typing mode") #, curses.A_REVERSE)
+        self.window.addstr('WHY ARE YOU LIKE THIS')
+        self.window.refresh()
+        self.window.addstr('WHY CANT YOU BE NORMAL')
+        self.window.refresh()
+        # But this printed in the right color (??? coincidence? Default grey may just be similar enough)
+        sys.stdout.write('uuuuu')
+        sys.stdout.flush()
+        self.window.getch()
 
-
-    @staticmethod
-    def _terminal_check():
-        # I'm going to assume you have colors.
-        if curses.COLORS != 256:
-            raise RuntimeError('256-color mode not detected')
+        # Something about the resize blanks the display, probably a curses SIGWICH handler blanking the canvas
+        logging.debug('Old size, maybe WHO KNOWS: %s', self.window.getmaxyx())
+        logging.debug('CURSES WILL NOT EMIT RESIZE >:C')
+        util.set_console_size(40, 80)
+        curses.resizeterm(40, 80)  # Literally none of this works, don't bother checking the resize
 
     # WHAT DO YOU MEAN NO KEYWORD ARGUMENTS THEY ARE EXPLICITLY NAMED THESE THINGS EVERYWHERE
     # Freaking C bindings
@@ -123,8 +124,8 @@ class GameLogic(rendering.Renderable):
     BORDER = ['║', '║', '═', '═', '╔', '╗', '╚', '╝']
 
     def render(self):
-        self.window.refresh()
-        self.window.addch(10, 10, '-')
+        #self.window.refresh()
+        self.window.addstr(10, 10, 'ASLDJALSJDLAJSDLK')
         self.window.refresh()
         #self.window.border(*self.BORDER)
         # sys.stdout.write(''.join([
@@ -146,4 +147,4 @@ class GameLogic(rendering.Renderable):
         while True:
             break
 
-        util.breakdown_console(self.window)
+        util.teardown_console(self.window)
