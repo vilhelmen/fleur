@@ -44,16 +44,14 @@ log = logging.getLogger('ART')
 FRAME_WIDTH = 9
 FRAME_HEIGHT = 5
 
-FLOWER_FRAME = {
-    'ls': '|',
-    'rs': '|',
-    'ts': '-',
-    'bs': '-',
-    'tl': '+',
-    'tr': '+',
-    'bl': '+',
-    'br': '+'
-}
+# FLOWER_FRAME = {
+#     'ls': '|', 'rs': '|', 'ts': '-', 'bs': '-',
+#     'tl': '+', 'tr': '+', 'bl': '+', 'br': '+'
+# }
+# CURSES >:C
+FLOWER_FRAME = [
+    '|', '|', '-', '-', '+', '+', '+', '+'
+]
 
 flower_frame = [
     '{BORDER}+-------+{RESET}',

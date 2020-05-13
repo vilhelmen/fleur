@@ -3,27 +3,6 @@
 from . import art, rendering
 import secrets
 
-
-RENDER_CODES = {
-    'Red': '\u001b[38;5;1m',
-    'Yellow': '\u001b[38;5;226m',
-    'White': '\u001b[38;5;15m',
-    'Pink': '\u001b[38;5;168m',
-    'Orange': '\u001b[38;5;208m',
-    'Purple': '\u001b[38;5;127m',
-    'Black': '\u001b[38;5;234m',
-    'Blue': '\u001b[38;5;63m',
-    'Green': '\u001b[38;5;35m',
-    'Plant': '\u001b[38;5;35m',
-    'Background': '\u001b[48;5;238m',  # TODO: Pull this up and out somewhere?
-    'WaterBorder': '\u001b[38;5;38m',
-    'NormalBorder': '\u001b[38;5;130m',
-    'RESET': '\u001b[30m',
-    'BOLD': '\u001b[5m',
-    'BLINK': '\u001b[1m',
-}
-# RENDER_CODES.update({k.upper(): v for k, v in render_codes.items()})
-
 FLOWER_TYPES = {'Tulip'}
 
 SEED_TYPES = {
@@ -34,6 +13,8 @@ SEED_TYPES = {
 
 FLOWER_COLORS = {
     'Tulip': {
+        # Still unsure if I want to use number or string representation
+        # Strings have to be processed more
         'rryyww': 'White',
         'rryyWw': 'White',
         'rryyWW': 'White',

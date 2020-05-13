@@ -96,26 +96,30 @@ class GameLogic(rendering.Renderable):
         # Something about this breaks text display, which is to say it went black on black and took AGES to figure out
         # Mother of god I think it's initializing the 8-bit colorspace to all (0,0,0)
         # WHY ARE YOU LIKE THIS
-        self.window.bkgd('#', curses.color_pair(1))
+        self.window.bkgd(' ', curses.color_pair(238))
         logging.debug('color %s', curses.color_pair(238))
+
         logging.debug('Color is (rgb), %s', curses.color_content(238))  # it SAYS (0,1000,1000) but yeah right.
-        self.window.addstr(0, 0, "Current mode: Typing mode") #, curses.A_REVERSE)
+        # All reported colors are some combination of 0 and 1000
+
+        self.window.addstr(0, 0, "Current mode: Typing mode", curses.A_REVERSE)
         self.window.addstr('WHY ARE YOU LIKE THIS')
-        self.window.refresh()
         self.window.addstr('WHY CANT YOU BE NORMAL')
-        self.window.refresh()
         # But this printed in the right color (??? coincidence? Default grey may just be similar enough)
-        sys.stdout.write('uuuuu')
-        sys.stdout.flush()
         self.window.getch()
+
+        # Why can't I specify JUST a foreground color. This kills all my motivation.
+        # What is wrong with curses.
 
         # Something about the resize blanks the display, probably a curses SIGWICH handler blanking the canvas
         logging.debug('Old size, maybe WHO KNOWS: %s', self.window.getmaxyx())
         logging.debug('CURSES WILL NOT EMIT RESIZE >:C')
         util.set_console_size(40, 80)
-        curses.resizeterm(40, 80)  # Literally none of this works, don't bother checking the resize
+        curses.resizeterm(40, 80)
 
-    # WHAT DO YOU MEAN NO KEYWORD ARGUMENTS THEY ARE EXPLICITLY NAMED THESE THINGS EVERYWHERE
+        self.window.getch()  # not working??
+
+    # WHAT DO YOU MEAN NO KEYWORD ARGUMENTS THEY ARE EXPLICITLY NAMED EVERYWHERE
     # Freaking C bindings
     # BORDER = {
     #     'ls': '║', 'rs': '║', 'ts': '═', 'bs': '═',
@@ -147,4 +151,3 @@ class GameLogic(rendering.Renderable):
         while True:
             break
 
-        util.teardown_console(self.window)

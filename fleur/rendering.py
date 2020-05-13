@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import curses
+import itertools
 
 # COLUMN IS X AND ROW IS Y AND I'M PUTTING IT HERE BEFORE I LOSE MY MIND ALSO IT'S ONE BASED
 
@@ -22,23 +23,39 @@ WHITE="$(tput setaf 254)"
 
 # printf "$(tput sgr0)" | uniscribe
 
-CURSOR_UP = '\u001b[1A'
-CURSOR_DOWN = '\u001b[1B'
-CURSOR_RIGHT = '\u001b[1C'
-CURSOR_LEFT = '\u001b[1D'
+BG = {
+    'STANDARD': 238,
+}
 
-CURSOR_UP_N = '\u001b[{}A'
-CURSOR_DOWN_N = '\u001b[{}B'
-CURSOR_RIGHT_N = '\u001b[{}C'
-CURSOR_LEFT_N = '\u001b[{}D'
+FG = {
+    'RED': 1,  # May be a bit much
+    'ORANGE': 208,
+    'YELLOW': 226,
+    'WHITE': 15,
+    'PINK': 168,
+    'PURPLE': 127,
+    'BLACK': 234,
+    'BLUE': 63,
+    'GREEN': 35,  # TODO: Differentiate from PLANT
+    'PLANT': 35,
+    'WATER': 38,
+    'BORDER': 130,
+    'TEXT': 253
+}
 
-CURSOR_DOWN_FAR_LEFT = '\u001b[1E'
+# Horrid dict of dicts mapping [bg][fg] to a color pair number
+COLOR_PAIRS = {k: {} for k in BG.keys()}
 
-FULL_RESET = '\u001b[0m'
-BOLD = '\u001b[1m'
-BLINK = '\u001b[5m'
-BLINK_OFF = '\u001b[25m'
-INVERT = '\u001b[7m'
+
+def init_color_palette():
+    # I hate curses so much
+    # Having to use a palette makes me want to cry
+    # Just let me set the colors individually
+    # I almost want to ignore curses graphics altogether and use stdout (hmmm)
+    for pair_no, ((bgname, bgno), (fgname, fgno)) in enumerate(itertools.product(BG.items(), FG.items()), start=1):
+        # 0 is reserved
+        curses.init_pair(pair_no, fgno, bgno)
+        COLOR_PAIRS[bgname][fgname] = pair_no
 
 
 class Renderable:
