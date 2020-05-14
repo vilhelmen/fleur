@@ -1,3 +1,8 @@
-{FLOWER}VWV{RESET}    
-  {Plant}\{RESET}    
-  {Plant}(\/{RESET}  
+VWV    
+  \    
+  (\/{RESET}  
+0000000
+0001111
+1111111
+STANDARD FLOWER
+STANDARD PLANT

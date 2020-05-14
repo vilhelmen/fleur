@@ -40,7 +40,8 @@ FG = {
     'PLANT': 35,
     'WATER': 38,
     'BORDER': 130,
-    'TEXT': 253
+    'TEXT': 253,
+    'ANY': 0  # Doesn't matter
 }
 
 # Horrid dict of dicts mapping [bg][fg] to a color pair number
